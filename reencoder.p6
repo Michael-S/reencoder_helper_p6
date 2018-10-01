@@ -2,26 +2,29 @@
 
 say "Checking prerequisites.";
 
-my $have-cpulimit = False;
-my $cpulimit = 'cpulimit';
+constant $cpulimit = 'cpulimit';
 
-try {
-   my $cpulimitcheck = run 'which', $cpulimit, :out;
-   for $cpulimitcheck.out.lines -> $line {
-       say "Found $cpulimit '$line'.";
-   }
-   $cpulimitcheck.out.close();
-   $have-cpulimit = True;
-   CATCH {
-       when X::Proc::Unsuccessful {
-           say "Warning: $cpulimit not found. CPU rate limiting not possible.";
-           say "You may wish to install $cpulimit.";
-           .resume
+sub checkcpulimit() returns Bool {
+    try {
+       my $cpulimitcheck = run 'which', $cpulimit, :out;
+       for $cpulimitcheck.out.lines -> $line {
+           say "Found $cpulimit '$line'.";
        }
-   }
+       $cpulimitcheck.out.close();
+       return True;
+       CATCH {
+           when X::Proc::Unsuccessful {
+               say "Warning: $cpulimit not found. CPU rate limiting not possible.";
+               say "You may wish to install $cpulimit.";
+               .resume
+           }
+       }
+    }
+    False;
 }
+my Bool $have-cpulimit = checkcpulimit();
 
-my $ffmpeg = 'ffmpeg';
+constant $ffmpeg = 'ffmpeg';
 try {
     my $ffmpegcheck = run 'which', $ffmpeg, :out;
     for $ffmpegcheck.out.lines -> $line {
@@ -47,6 +50,9 @@ if (@mkvs.elems == 0) {
 }
 
 my Str $output-encoded-path = prompt "Please enter the name of the directory for reencoded files: ";
+if ($output-encoded-path === $to-encode-path) {
+   die "You cannot select the same input directory and output directory.";
+}
 if (!$output-encoded-path.IO.d) {
    mkdir $output-encoded-path;
 }
@@ -61,6 +67,7 @@ sub launchcpulimiting(Bool $found) returns Proc::Async {
                 my $cpulimiting = Proc::Async.new('cpulimit', '-l', $cpurate, '-e', $ffmpeg);
                 $cpulimiting.stdout.tap(-> $buf { }); # ignored
                 $cpulimiting.stderr.tap(-> $buf { }); # ignored
+                say "    Starting the cpulimit process.";
                 $cpulimiting.start;
                 return $cpulimiting;
                 CATCH {
@@ -72,6 +79,8 @@ sub launchcpulimiting(Bool $found) returns Proc::Async {
     Nil
 }
 my $cpulimiting-status = launchcpulimiting($have-cpulimit);
+
+
 
 if ($cpulimiting-status.defined && $cpulimiting-status.started) {
     $cpulimiting-status.kill('QUIT');
