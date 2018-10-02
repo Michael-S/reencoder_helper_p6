@@ -10,4 +10,4 @@ The WebM format was a consideration, and it makes some forms of streaming over t
 
 The license is LGPL 2.1+, same as ffmpeg, in the unlikely event someone else wants to package the two together.
 
-The goal for use is for the user to run: ``perl6 reencoderhelper.p6 <some directory full of mkv files>`` and wait a few days and then have the finished files in an output directory.  Nothing too fancy.
+The goal for use is for the user to run: ``perl6 reencoder.p6``, follow the prompts to get it started, and then wait a few days and then have the finished files in an output directory.  Nothing too fancy.
