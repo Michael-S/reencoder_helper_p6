@@ -3,11 +3,43 @@
 constant $cpulimit = 'cpulimit';
 constant $ffmpeg = 'ffmpeg';
 
-sub MAIN {
+sub USAGE() {
+    print Q:c:to/EOH/;
+Usage:
+    option 1:
+         perl6 reencoder.p6
+         -- interactively prompts you for inputs
+    option 2:
+         perl6 reencoder.p6 --srcdir=foo --destdir=bar --cpulimit=200 --name=Some_Movie
+         -- reencodes all mkv files from directory 'foo' into directory 'bar',
+            limiting CPU usage to 200 (two full cores), and putting Some_Movie into
+            the film names.
+         -- the cpulimit and name inputs are optional
+EOH
+}
+
+multi sub MAIN {
+
+    my Str $srcdirin = prompt "Please enter the name of the directory containing the files to re-encode: ";
+    my Str $destdirin = prompt "Please enter the name of the directory for reencoded files: ";
+    my Str $namein = prompt "Enter a file name pattern to apply to the files (ENTER for none): ";
+    my Str $cpulimit-string = prompt "Enter a value for CPU limiting. 0 or ENTER for none: ";
+    my Int $cpulimitin = $cpulimit-string ~~ /\d+/ ?? $cpulimit-string.Int !! 0;
+    run-process($srcdirin, $destdirin, $cpulimitin, $namein);
+}
+
+multi sub MAIN(Str :$srcdir! where $srcdir.chars > 0,
+               Str :$destdir! where $destdir.chars > 0,
+               Int :$cpulimit = 0,
+               Str :$name = "") {
+    run-process($srcdir, $destdir, $cpulimit, $name);
+}
+
+
+sub run-process(Str $srcdir, Str $destdir, Int $cpulimit, Str $name) {
     say "Checking prerequisites.";
-
-    my Bool $have-cpulimit = checkcpulimit();
-
+    #say "srcdir $srcdir, destdir $destdir, cpulimit $cpulimit, name $name.";
+    my Bool $using-cpulimit = $cpulimit > 0 && checkcpulimit();
     try {
         my $ffmpegcheck = run 'which', $ffmpeg, :out;
         for $ffmpegcheck.out.lines -> $line {
@@ -22,47 +54,39 @@ sub MAIN {
         }
     }
 
-    my Str $to-encode-path = prompt "Please enter the name of the directory containing the files to re-encode: ";
-    if (!$to-encode-path.IO.d) {
-       die "Directory '$to-encode-path' does not exist.";
+    if (!$srcdir.IO.d) {
+        die "Directory '$srcdir' does not exist.";
     }
-
-    my Str $rename-pattern = prompt "Enter a file name pattern to apply to the files (ENTER for none): ";
-    if ($rename-pattern.chars > 0) {
-       say "    Using '$rename-pattern'.";
-    }
-
-    my @mkvs = $to-encode-path.IO.dir: test => /:i '.' mkv $/;
+    my @mkvs = $srcdir.IO.dir: test => /:i '.' mkv $/;
     if (@mkvs.elems == 0) {
-       die "Could not find any mkv files in directory '$to-encode-path'.";
+       die "Could not find any mkv files in directory '$srcdir'.";
     }
-
-    my Str $output-encoded-path = prompt "Please enter the name of the directory for reencoded files: ";
-    if ($output-encoded-path === $to-encode-path) {
+    if ($name.chars > 0) {
+       say "    Using video name '$name'.";
+    }
+    if ($destdir === $srcdir) {
        die "You cannot select the same input directory and output directory, the files will overwrite each other.";
     }
-    if (!$output-encoded-path.IO.d) {
-       mkdir $output-encoded-path;
+    if (!$destdir.IO.d) {
+       mkdir $destdir;
     } else {
-       my @previous-mkvs = $output-encoded-path.IO.dir: test => /:i '.' mkv $/;
+       my @previous-mkvs = $destdir.IO.dir: test => /:i '.' mkv $/;
        if (@previous-mkvs.elems > 0) {
             say "Found existing mkv files in output directory, stopping!";
-            die "Please move the files in $output-encoded-path out of the way first.";
+            die "Please move the files in $destdir out of the way first.";
        }
     }
-
-    my $cpulimiting-status = launchcpulimiting($have-cpulimit);
-
+    my $cpulimiting-status = launchcpulimiting($using-cpulimit);
     my @sortedmkvs = @mkvs.sort( - *.IO.s);
     my $main-video = @sortedmkvs.shift;
-    my $main-output = $rename-pattern.chars > 0 ?? $rename-pattern.uc ~ '.mkv' !! $main-video.IO.basename;
+    my $main-output = $name.chars > 0 ?? $name.uc ~ '.mkv' !! $main-video.IO.basename;
     say "Handling main title.";
-    wrap-encode($main-video, $output-encoded-path ~ "/" ~ $main-output);
+    wrap-encode($main-video, $destdir ~ "/" ~ $main-output);
 
     for @sortedmkvs -> $mkv {
         say "Handling title $mkv.";
-        my $target = $rename-pattern.chars > 0 ?? $rename-pattern ~ '_' ~ $mkv.IO.basename !! $mkv.IO.basename;
-        wrap-encode($mkv, $output-encoded-path ~ "/" ~ $target);
+        my $target = $name.chars > 0 ?? $name ~ '_' ~ $mkv.IO.basename !! $mkv.IO.basename;
+        wrap-encode($mkv, $destdir ~ "/" ~ $target);
     }
 
     if ($cpulimiting-status.defined && $cpulimiting-status.started) {
@@ -70,7 +94,9 @@ sub MAIN {
         say "Closed the cpulimit process.";
     }
     say "Finished.";
-} # end MAIN
+
+}
+
 
 sub checkcpulimit() returns Bool {
     try {
