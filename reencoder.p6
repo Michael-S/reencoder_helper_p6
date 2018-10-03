@@ -25,6 +25,8 @@ multi sub MAIN {
     my Str $namein = prompt "Enter a file name pattern to apply to the files (ENTER for none): ";
     my Str $cpulimit-string = prompt "Enter a value for CPU limiting. 0 or ENTER for none: ";
     my Int $cpulimitin = $cpulimit-string ~~ /\d+/ ?? $cpulimit-string.Int !! 0;
+    say "In the future, you could have invoked this with:";
+    say "perl6 reencoder.p6 --srcdir=$srcdirin --destdir=$destdirin --cpulimit=$cpulimit-string --name=$namein";
     run-process($srcdirin, $destdirin, $cpulimitin, $namein);
 }
 
@@ -76,7 +78,7 @@ sub run-process(Str $srcdir, Str $destdir, Int $cpulimit, Str $name) {
             die "Please move the files in $destdir out of the way first.";
        }
     }
-    my $cpulimiting-status = launchcpulimiting($using-cpulimit);
+    my $cpulimiting-status = launchcpulimiting($using-cpulimit, $cpulimit);
     my @sortedmkvs = @mkvs.sort( - *.IO.s);
     my $main-video = @sortedmkvs.shift;
     my $main-output = $name.chars > 0 ?? $name.uc ~ '.mkv' !! $main-video.IO.basename;
@@ -117,22 +119,17 @@ sub checkcpulimit() returns Bool {
     False;
 }
 
-sub launchcpulimiting(Bool $found) returns Proc::Async {
-    if ($found) {
-        say "Enter a cpulimit rate for movie encoding as a percentage.";
-        say "    for example, if you want to designate three full cores then";
-        my Int $cpurate = (prompt "    enter 300. Enter 0 for full use of all available CPU cores: ").Int;
-        if ($cpurate > 0) {
-            try {
-                my $cpulimiting = Proc::Async.new('cpulimit', '-l', $cpurate, '-e', $ffmpeg);
-                $cpulimiting.stdout.tap(-> $buf { }); # ignored
-                $cpulimiting.stderr.tap(-> $buf { }); # ignored
-                say "    Starting the cpulimit process.";
-                $cpulimiting.start;
-                return $cpulimiting;
-                CATCH {
-                    default { .Str.say; }
-                }
+sub launchcpulimiting(Bool $found, Int $cpurate) returns Proc::Async {
+    if ($found && $cpurate > 0) {
+        try {
+            my $cpulimiting = Proc::Async.new('cpulimit', '-l', $cpurate, '-e', $ffmpeg);
+            $cpulimiting.stdout.tap(-> $buf { }); # ignored
+            $cpulimiting.stderr.tap(-> $buf { }); # ignored
+            say "    Starting the cpulimit process.";
+            $cpulimiting.start;
+            return $cpulimiting;
+            CATCH {
+                default { .Str.say; }
             }
         }
     }
@@ -168,7 +165,7 @@ sub wrap-encode(IO::Path $infile, Str $outfile) {
 
 sub run-encode(IO::Path $infile, Str $outfile) {
     my $encode-cmd = Proc::Async.new('ffmpeg', '-i', $infile, '-c:a', 'copy', '-c:s', 'copy', '-c:v', 'libx265',
-         '-crf', '20', $outfile);
+         '-crf', '20', '-preset', 'slow', $outfile);
     react {
         whenever $encode-cmd.stdout -> $my-out {
              # $my-out intentionally ignored
@@ -187,7 +184,7 @@ sub run-encode(IO::Path $infile, Str $outfile) {
              done # gracefully jump from the react block
         }
    }
-   await $encode-cmd.start;
+   await $encode-cmd;
 }
 
 
