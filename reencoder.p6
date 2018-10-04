@@ -184,7 +184,6 @@ sub run-encode(IO::Path $infile, Str $outfile) {
              done # gracefully jump from the react block
         }
    }
-   await $encode-cmd;
 }
 
 
