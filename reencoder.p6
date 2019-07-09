@@ -165,7 +165,7 @@ sub wrap-encode(IO::Path $infile, Str $outfile) {
 
 sub run-encode(IO::Path $infile, Str $outfile) {
     my $encode-cmd = Proc::Async.new('ffmpeg', '-i', $infile, '-c:a', 'copy', '-c:s', 'copy', '-c:v', 'libx265',
-         '-max_muxing_queue_size', '9999', '-crf', '20', '-preset', 'slow', $outfile);
+         '-crf', '19', '-preset', 'slow', '-max_muxing_queue_size', '9999', $outfile);
     react {
         whenever $encode-cmd.stdout -> $my-out {
              # $my-out intentionally ignored
