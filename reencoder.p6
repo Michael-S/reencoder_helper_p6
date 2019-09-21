@@ -1,3 +1,7 @@
+# Copyright Mike Swierczek, 2019.
+# Licensed under the Lesser GNU Public License version 2.1 or later.
+# Please see the included LICENSE file for details.
+
 # Hooray, Perl6
 
 constant $cpulimit = 'cpulimit';
@@ -26,7 +30,11 @@ multi sub MAIN {
     my Str $cpulimit-string = prompt "Enter a value for CPU limiting. 0 or ENTER for none: ";
     my Int $cpulimitin = $cpulimit-string ~~ /\d+/ ?? $cpulimit-string.Int !! 0;
     say "In the future, you could have invoked this with:";
-    say "perl6 reencoder.p6 --srcdir=$srcdirin --destdir=$destdirin --cpulimit=$cpulimit-string --name=$namein";
+    if ($cpulimitin > 0) {
+        say "perl6 reencoder.p6 --srcdir=$srcdirin --destdir=$destdirin --cpulimit=$cpulimit-string --name=$namein";
+    } else {
+        say "perl6 reencoder.p6 --srcdir=$srcdirin --destdir=$destdirin --name=$namein";
+    }
     run-process($srcdirin, $destdirin, $cpulimitin, $namein);
 }
 
