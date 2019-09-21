@@ -146,7 +146,7 @@ sub run-second-pass(IO::Path $infile, Str $outfile, Str $encoding-json) {
              exit;
         }
         whenever $encode-cmd.start {
-             say "    Done pass 1.";
+             say "    Done pass 2.";
              done # gracefully jump from the react block
         }
    }
