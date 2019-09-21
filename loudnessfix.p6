@@ -89,8 +89,8 @@ constant $samplerate = "48k";
 
 sub run-first-pass(IO::Path $infile -->Str) {
     my $encode-cmd = Proc::Async.new('ffmpeg', '-i', $infile, '-af',
-         "loudnorm=I=$target_il\:LRA=$target_lra\:tp=$target_tp\:print_format=json", '-f', 'null');
-    my Str $result = "";
+         "loudnorm=I=$target_il\:LRA=$target_lra\:tp=$target_tp\:print_format=json", '-f', 'null', '-');
+    my Str @result;
     react {
         whenever $encode-cmd.stdout -> $my-out {
              # print spinner() ~ "\r";
@@ -98,7 +98,7 @@ sub run-first-pass(IO::Path $infile -->Str) {
         }
         whenever $encode-cmd.stderr -> $my-err {
              # print spinner() ~ "\r";
-             $result ~= $my-err;
+             @result.push($my-err);
              say "Capturing: $my-err.";
         }
         whenever signal(SIGINT) {
@@ -110,11 +110,14 @@ sub run-first-pass(IO::Path $infile -->Str) {
              done # gracefully jump from the react block
         }
    }
-   say "Returning result: $result ";
-   $result;
+   # need the last twelve lines (??)
+   my Str $str-result = @result[(@result.end - 12)..@result.end].join("\n"); 
+   say "Returning result: $str-result ";
+   $str-result;
 }
 
 sub run-second-pass(IO::Path $infile, Str $outfile, Str $encoding-json) {
+    say "Trying to parse: $encoding-json .";
     my $parsed-json = from-json($encoding-json);
     say "Parsed to $parsed-json.";
     my $input_i = $parsed-json<input_i>;
