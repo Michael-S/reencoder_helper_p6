@@ -2,18 +2,23 @@
 # Licensed under the Lesser GNU Public License version 2.1 or later.
 # Please see the included LICENSE file for details.
 
+### NOTE: This code seems to 'work' in the sense that it runs and completes,
+### but the resulting file does not seem to have more consistent sound volume
+### ranges than the input file.
+
+
 use JSON::Fast;
- 
+
 constant $ffmpeg = 'ffmpeg';
 
 sub USAGE() {
     print Q:c:to/EOH/;
 Usage:
     option 1:
-         perl6 loudnessfix.p6
+         raku loudnessfix.raku
          -- interactively prompts you for inputs
     option 2:
-         perl6 loudnessfix.p6 --src=foo --dest=bar 
+         raku loudnessfix.raku --src=foo --dest=bar
          -- reencodes movie foo to bar with loudness normalization
             applied to the first audio stream in it.  Video
             streams and subtitles, if any, are unchanged.
@@ -28,7 +33,7 @@ multi sub MAIN {
     my Str $src = prompt "Please enter the name of the source film: ";
     my Str $dest = prompt "Please enter the name of the destination film: ";
     say "In the future, you could have invoked this with:";
-    say "perl6 loudnessfix.p6 --src=$src --dest=$dest";
+    say "raku loudnessfix.raku --src=$src --dest=$dest";
     run-process($src, $dest);
 }
 
@@ -127,7 +132,7 @@ sub run-second-pass(IO::Path $infile, Str $outfile, Str $encoding-json) {
     my $input_thresh = $parsed-json<input_thresh>;
     my $offset = $parsed-json<target_offset>;
     say "Have $input_i $input_lra $input_tp $input_thresh .";
-    my $encode-cmd = Proc::Async.new('ffmpeg', '-i', $infile, '-c:v', 'copy', '-c:s', 'copy', 
+    my $encode-cmd = Proc::Async.new('ffmpeg', '-i', $infile, '-c:v', 'copy', '-c:s', 'copy',
          '-af',
          "loudnorm=print_format=summary\:I=$target_il\:LRA=$target_lra\:tp=$target_tp\:" ~
          "measured_I=$input_i\:measured_LRA=$input_lra\:measured_tp=$input_tp\:measured_thresh=$input_thresh\:offset=$offset",

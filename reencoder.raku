@@ -2,7 +2,7 @@
 # Licensed under the Lesser GNU Public License version 2.1 or later.
 # Please see the included LICENSE file for details.
 
-# Hooray, Perl6
+# Hooray, Raku
 
 constant $cpulimit = 'cpulimit';
 constant $ffmpeg = 'ffmpeg';
@@ -11,10 +11,10 @@ sub USAGE() {
     print Q:c:to/EOH/;
 Usage:
     option 1:
-         perl6 reencoder.p6
+         raku reencoder.raku
          -- interactively prompts you for inputs
     option 2:
-         perl6 reencoder.p6 --srcdir=foo --destdir=bar --cpulimit=200 --name=Some_Movie
+         raku reencoder.raku --srcdir=foo --destdir=bar --cpulimit=200 --name=Some_Movie
          -- reencodes all mkv files from directory 'foo' into directory 'bar',
             limiting CPU usage to 200 (two full cores), and putting Some_Movie into
             the film names.
@@ -31,9 +31,9 @@ multi sub MAIN {
     my Int $cpulimitin = $cpulimit-string ~~ /\d+/ ?? $cpulimit-string.Int !! 0;
     say "In the future, you could have invoked this with:";
     if ($cpulimitin > 0) {
-        say "perl6 reencoder.p6 --srcdir=$srcdirin --destdir=$destdirin --cpulimit=$cpulimit-string --name=$namein";
+        say "raku reencoder.raku --srcdir=$srcdirin --destdir=$destdirin --cpulimit=$cpulimit-string --name=$namein";
     } else {
-        say "perl6 reencoder.p6 --srcdir=$srcdirin --destdir=$destdirin --name=$namein";
+        say "raku reencoder.raku --srcdir=$srcdirin --destdir=$destdirin --name=$namein";
     }
     run-process($srcdirin, $destdirin, $cpulimitin, $namein);
 }

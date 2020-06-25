@@ -1,8 +1,8 @@
 # reencoder_helper_p6
 
-A Perl 6 command line utility to assist in reencoding Blu Ray rips to save on disk space.  I've written it to support a relatively recent Rakudo Star Perl6 release (2018 or so) on Linux, and it probably won't work properly out of the box on macOs or Microsoft Windows.
+A Raku command line utility to assist in reencoding Blu Ray rips to save on disk space.  I've written it to support a relatively recent Rakudo Star Raku6 release (2018 or so) on Linux, and it probably won't work properly out of the box on macOs or Microsoft Windows.
 
-I chose Perl6 for fun.
+I chose Raku for fun.
 
 When I purchase a new DVD or Blu Ray disk, I use the MakeMKV software (http://www.makemkv.com/) to copy the contents to disk.
 
@@ -12,4 +12,4 @@ The WebM format was a consideration, and it makes some forms of streaming over t
 
 The license is LGPL 2.1+, same as ffmpeg, in the unlikely event someone else wants to package the two together.
 
-The goal for use is for the user to run: ``perl6 reencoder.p6``, follow the prompts to get it started, and then wait a few days and then have the finished files in an output directory.  Nothing too fancy, but far less manual work than running ffmpeg commands by hand every time you rip a Blu Ray.
+The goal for use is for the user to run: ``raku reencoder.raku``, follow the prompts to get it started, and then wait a few days and then have the finished files in an output directory.  Nothing too fancy, but far less manual work than running ffmpeg commands by hand every time you rip a Blu Ray.
