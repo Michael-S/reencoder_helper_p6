@@ -1,0 +1,25 @@
+GitHub offers many features and has become the default place people
+share and search for source code. But centralizing everything in
+one location is risky.
+
+I am making a practice of dual-hosting my projects.
+There are more comprehensive guides for dual-hosting a git project
+on the web, but this is a quick overview of the steps:
+1. Create the project on one site, like GitHub, and
+clone it to your machine.
+git clone git@some.server.somewhere:someuser/someproject.git
+2. Create an empty project on another site, like Gitlab,
+Sourcehut, Kallithea, Phacility, Gogs, Gitea, or similar.
+Get the git clone URL for that project, typically something
+git clone git@some.other.server.somewhere.else:someotheruser/someproject.git
+In your shell prompt for the project for the previous step, enter
+git remote add alternate git@some.other.server.somewhere.else:someotheruser/someproject.git
+
+Now every time you make a change or download a change, you can do
+git push # to push your changes to the first server
+git push alternate # to push your changes to the other server.
+
+For this project my two servers are:
+https://github.com/Michael-S/reencoder_helper_p6
+and
+https://git.sr.ht/~mikeswierczek/simple_reencoder_helper
